@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from category import Category
+from database_entities import Category
 
 Base = declarative_base()
 
@@ -19,4 +19,3 @@ category1 = Category(category='Sport')
 category2 = Category(category='Video game')
 category3 = Category(category='Movies')
 category4 = Category(category='Household')
-
