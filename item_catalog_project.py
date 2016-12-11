@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from database_entities import User, Category, Item, Base
 
 from flask import session as login_session
-import random, string
+import random
+import string
 
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
@@ -17,18 +18,12 @@ app = Flask(__name__)
 CLIENT_ID = json.loads(
     open('client_secret.json', 'r').read())['web']['client_id']
 
-engine = create_engine('sqlite:///restaurantmenuwithusers.db')
+engine = create_engine('sqlite:///itemcatalogwithcategory.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
-@app.route('/login')
-def login():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in xrange(32))
-    login_session['state'] = state
-    return render_template('login.html', STATE=state)
 
 @app.route('/googleconnect', methods=['POST'])
 def googleConnect():
@@ -101,6 +96,13 @@ def googleConnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
+    login_session['provider'] = 'google'
+
+    user_id = get_user_by_ID(data["email"])
+    if not user_id:
+        user_id = create_user(login_session)
+    login_session['user_id'] = user_id
+
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -112,9 +114,59 @@ def googleConnect():
     print "done!"
     return output
 
+
+@app.route('/gdisconnect')
+def gdisconnect():
+    # Only disconnect a connected user.
+    credentials = login_session.get('credentials')
+    if credentials is None:
+        response = make_response(
+            json.dumps('Current user not connected.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    access_token = credentials.access_token
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[0]
+    if result['status'] != '200':
+        # For whatever reason, the given token was invalid.
+        response = make_response(
+            json.dumps('Failed to revoke token for given user.'), 400)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+
+@app.route('/login')
+def login():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in xrange(32))
+    login_session['state'] = state
+    return render_template('login.html', STATE=state)
+
+
 @app.route('/main')
 def main():
     print 'Hello'
+
+
+@app.route('/')
+def main_page():
+    all_categories = session.query(Category).all()
+    return render_template('main.html', categories=all_categories)
+
+
+def get_user_by_ID(user_id):
+    user = session.query(User).filter_by(user_id=user_id).one()
+    return user
+
+
+def create_user(login_session):
+    new_user = User(name=login_session['username'],
+                    email=login_session['email'], picture=login_session['picture'])
+    session.add(new_user)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user
 
 
 if __name__ == '__main__':

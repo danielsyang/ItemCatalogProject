@@ -1,0 +1,10 @@
+{% extends "header.html" %}
+{% block content %}
+
+  <ul>
+    {% for cat in categories %}
+    <li><a href="#">{{ cat.category }}</a></li>
+    {% endfor %}
+  </ul>
+
+{% endblock %}

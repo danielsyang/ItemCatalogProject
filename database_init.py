@@ -19,3 +19,13 @@ category1 = Category(category='Sport')
 category2 = Category(category='Video game')
 category3 = Category(category='Movies')
 category4 = Category(category='Household')
+
+session.add(category0)
+session.add(category1)
+session.add(category2)
+session.add(category3)
+session.add(category4)
+
+session.commit()
+
+print 'Categories created!'
