@@ -1,4 +1,5 @@
 from flask import Flask, render_template, make_response, request, flash
+from werkzeug.routing import BaseConverter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_entities import User, Category, Item, Base
@@ -14,6 +15,16 @@ import json
 import requests
 
 app = Flask(__name__)
+
+
+class RegexConverter(BaseConverter):
+
+    def __init__(self, url_map, *items):
+        super(RegexConverter, self).__init__(url_map)
+        self.regex = items[0]
+
+app.url_map.converters['regex'] = RegexConverter
+
 
 CLIENT_ID = json.loads(
     open('client_secret.json', 'r').read())['web']['client_id']
@@ -147,6 +158,22 @@ def login():
 @app.route('/main')
 def main():
     print 'Hello'
+
+
+@app.route("/<regex('\D+'):param>")
+def listing_category(param):
+    category_exists = session.query(Category).filter_by(category=param).first()
+    if category_exists:        
+        post_category = session.query(Item).filter_by(category_id=category_exists.category_id).all()
+    else:
+        error = "This category doesn't exist!"
+
+    if post_category is not None:
+        if len(post_category) == 0:
+            error = "There aren't any posts for this category!"
+
+    return render_template('post_category.html', posts=post_category, error=error)
+
 
 
 @app.route('/')
