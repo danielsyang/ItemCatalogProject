@@ -1,4 +1,4 @@
-from flask import Flask, render_template, make_response, request, flash
+from flask import Flask, render_template, make_response, request, flash, redirect, url_for
 from werkzeug.routing import BaseConverter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -109,7 +109,7 @@ def googleConnect():
 
     login_session['provider'] = 'google'
 
-    user_id = get_user_by_ID(data["email"])
+    user_id = get_user_by_email(data['email'])
     if not user_id:
         user_id = create_user(login_session)
     login_session['user_id'] = user_id
@@ -129,6 +129,7 @@ def googleConnect():
 @app.route('/gdisconnect')
 def gdisconnect():
     # Only disconnect a connected user.
+    print 'catetea'
     credentials = login_session.get('credentials')
     if credentials is None:
         response = make_response(
@@ -144,7 +145,30 @@ def gdisconnect():
         response = make_response(
             json.dumps('Failed to revoke token for given user.'), 400)
         response.headers['Content-Type'] = 'application/json'
+        print response
         return response
+
+
+@app.route('/disconnect')
+def disconnect():
+    if 'provider' in login_session:
+        if login_session['provider'] == 'google':
+            gdisconnect()
+            del login_session['gplus_id']
+            del login_session['credentials']
+        if login_session['provider'] == 'facebook':
+            fbdisconnect()
+            del login_session['facebook_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        del login_session['user_id']
+        del login_session['provider']
+        flash("You have successfully been logged out.")
+        return redirect('/')
+    else:
+        flash("You were not logged in")
+        return redirect('/')
 
 
 @app.route('/login')
@@ -155,19 +179,26 @@ def login():
     return render_template('login.html', STATE=state)
 
 
-@app.route('/main')
-def main():
-    print 'Hello'
-
-
 @app.route("/create/<regex('\D+'):param>", methods=['POST', 'GET'])
 def create_post(param):
     if request.method == 'GET':
-        print 'GET'
-        return render_template('post_create.html', cat=param)
+
+        if 'user_id' in login_session:
+            return render_template('post_create.html', cat=param)
+        else:
+            flash("You don't have permission to create a post.")
+            return redirect(url_for('listing_category', param=param))
+
 
     if request.method == 'POST':
-        print 'POST'
+        # if login
+
+        name = request.form['nameItem']
+        description = request.form['descriptionItem']
+        price = request.form['priceItem']
+
+        print 'AQUI :::: %s, %s, %s' % (name, description, price)
+
         return render_template('post_create.html', cat=param)
 
 
@@ -179,13 +210,13 @@ def listing_category(param):
         post_category = session.query(Item).filter_by(
             category_id=category_exists.category_id).all()
     else:
-        error = "This category doesn't exist!"
+        flash("This category doesn't exist!", 'error')
 
     if category_exists and post_category is not None:
         if len(post_category) == 0:
-            error = "There aren't any posts for this category!"
+            flash("There aren't any posts for this category!", 'error')
 
-    return render_template('post_category.html', posts=post_category, error=error, cat=param)
+    return render_template('post_category.html', posts=post_category, cat=param)
 
 
 @app.route('/')
@@ -194,9 +225,12 @@ def main_page():
     return render_template('main.html', categories=all_categories)
 
 
-def get_user_by_ID(user_id):
-    user = session.query(User).filter_by(user_id=user_id).one()
-    return user
+def get_user_by_email(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.user_id
+    except:
+        return None
 
 
 def create_user(login_session):
@@ -205,7 +239,7 @@ def create_user(login_session):
     session.add(new_user)
     session.commit()
     user = session.query(User).filter_by(email=login_session['email']).one()
-    return user
+    return user.user_id
 
 
 if __name__ == '__main__':
