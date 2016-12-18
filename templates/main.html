@@ -10,7 +10,7 @@
   <div class="col-md-6 col-md-offset-5">
     <ul class="list-unstyled">
       {% for cat in categories %}
-      <li><a href="#">{{ cat.category }}</a></li>
+      <li><a href="/{{ cat.category }}">{{ cat.category }}</a></li>
       {% endfor %}
     </ul>
   </div>

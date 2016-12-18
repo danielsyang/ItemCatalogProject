@@ -160,20 +160,32 @@ def main():
     print 'Hello'
 
 
+@app.route("/create/<regex('\D+'):param>", methods=['POST', 'GET'])
+def create_post(param):
+    if request.method == 'GET':
+        print 'GET'
+        return render_template('post_create.html', cat=param)
+
+    if request.method == 'POST':
+        print 'POST'
+        return render_template('post_create.html', cat=param)
+
+
 @app.route("/<regex('\D+'):param>")
 def listing_category(param):
     category_exists = session.query(Category).filter_by(category=param).first()
-    if category_exists:        
-        post_category = session.query(Item).filter_by(category_id=category_exists.category_id).all()
+    post_category = []
+    if category_exists:
+        post_category = session.query(Item).filter_by(
+            category_id=category_exists.category_id).all()
     else:
         error = "This category doesn't exist!"
 
-    if post_category is not None:
+    if category_exists and post_category is not None:
         if len(post_category) == 0:
             error = "There aren't any posts for this category!"
 
-    return render_template('post_category.html', posts=post_category, error=error)
-
+    return render_template('post_category.html', posts=post_category, error=error, cat=param)
 
 
 @app.route('/')
