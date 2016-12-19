@@ -129,7 +129,6 @@ def googleConnect():
 @app.route('/gdisconnect')
 def gdisconnect():
     # Only disconnect a connected user.
-    print 'catetea'
     credentials = login_session.get('credentials')
     if credentials is None:
         response = make_response(
@@ -145,7 +144,6 @@ def gdisconnect():
         response = make_response(
             json.dumps('Failed to revoke token for given user.'), 400)
         response.headers['Content-Type'] = 'application/json'
-        print response
         return response
 
 
@@ -182,41 +180,52 @@ def login():
 @app.route("/create/<regex('\D+'):param>", methods=['POST', 'GET'])
 def create_post(param):
     if request.method == 'GET':
-
         if 'user_id' in login_session:
             return render_template('post_create.html', cat=param)
         else:
             flash("You don't have permission to create a post.")
             return redirect(url_for('listing_category', param=param))
 
-
     if request.method == 'POST':
-        # if login
 
-        name = request.form['nameItem']
-        description = request.form['descriptionItem']
-        price = request.form['priceItem']
+        if 'user_id' in login_session:
+            name = request.form['nameItem']
+            description = request.form['descriptionItem']
+            price = request.form['priceItem']
+            user = login_session['user_id']
+            cat = get_category_id(param)
+            print cat
 
-        print 'AQUI :::: %s, %s, %s' % (name, description, price)
+            new_item = Item(name=name, description=description, price=price, user_id=user, cat=cat)
+            session.add(new_item)
+            session.commit()
 
-        return render_template('post_create.html', cat=param)
+            return redirect('/%s' %param)
+
+        else:
+            flash("You don't have permission to create a post.")
+            return redirect(url_for('listing_category', param=param))
 
 
-@app.route("/<regex('\D+'):param>")
+@app.route("/<regex('\D+'):param>", methods=['GET'])
 def listing_category(param):
     category_exists = session.query(Category).filter_by(category=param).first()
-    post_category = []
+    items_category = []
     if category_exists:
-        post_category = session.query(Item).filter_by(
+        items_category = session.query(Item).filter_by(
             category_id=category_exists.category_id).all()
     else:
         flash("This category doesn't exist!", 'error')
 
-    if category_exists and post_category is not None:
-        if len(post_category) == 0:
+    print 'aquiausiausi: ', len(items_category)
+
+    if category_exists and items_category is not None:
+        if len(items_category) == 0:
             flash("There aren't any posts for this category!", 'error')
 
-    return render_template('post_category.html', posts=post_category, cat=param)
+    print 'antes de', len(items_category)
+
+    return render_template('post_category.html', items=items_category, cat=param)
 
 
 @app.route('/')
@@ -229,6 +238,14 @@ def get_user_by_email(email):
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.user_id
+    except:
+        return None
+
+
+def get_category_id(category):
+    try:
+        cat = session.query(Category).filter_by(category=category).first()
+        return cat
     except:
         return None
 

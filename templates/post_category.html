@@ -27,17 +27,23 @@
   </div>
 </div>
 
-{% if post|length != 0  %}
-  {%for post in posts%}
+{% if items|length != 0  %}
 
-  <h2>OLA</h2>
-
+<div class="row">
+  {%for item in items%}
+  <div class="col-md-4 well">
+    <h3 class="text-center">{{ item.name }}</h3>
+    <p>Description: {{ item.description }}</p>
+    <p>Price: {{ item.price }}</p>
+    <p>Owner: {{ item.user_id.name }}</p>
+  </div>
   {% endfor %}
+</div>
 {% endif %}
 
 <div class="row">
   <div class="col-md-6">
-    <a href="/create/{{ cat }}" class="btn btn-primary">Create Post</a>
+    <a href="/create/{{ cat }}" class="btn btn-primary">Create item</a>
   </div>
 
 </div>
