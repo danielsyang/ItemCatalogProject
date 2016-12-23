@@ -27,18 +27,25 @@
   </div>
 </div>
 
+<div class="row">
+  <div class="col-md-12">
+    <h2>{{ cat }} Items</h2>
+  </div>
+</div>
+
 {% if items|length != 0  %}
 
 <div class="row">
-  {%for item in items%}
-  <div class="col-md-4 well">
-    <h3 class="text-center">{{ item.name }}</h3>
-    <p>Description: {{ item.description }}</p>
-    <p>Price: {{ item.price }}</p>
-    <p>Owner: {{ item.user_id.name }}</p>
+  <div class="col-md-12">
+    <ul class="list-unstyled">
+      {%for item in items%}
+      <li><a href="/resume/{{ item.item_id }}">{{ item.name }}</a></li>      
+      {% endfor %}
+    </ul>
   </div>
-  {% endfor %}
 </div>
+{% else %}
+  <h3>0 items</h3>
 {% endif %}
 
 <div class="row">

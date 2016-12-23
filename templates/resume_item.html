@@ -1,0 +1,31 @@
+{% extends "header.html" %}
+{% block content %}
+
+<div class="row">
+  <div class="col-md-12">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+
+    <div class="alert alert-warning">
+      {% for message in messages %}
+        <h4 class="text-center">{{ message }}</h4>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+  </div>
+</div>
+
+<div class="row well">
+  <div class="col-md-12">
+    <h3>{{ item.name }}</h3>
+  </div>
+  <div class="col-md-12">
+    <p>{{ item.description }}</p>
+  </div>
+  <div class="col-md-12">
+    <a href="#">Edit</a> | <a href="/remove/{{ item.item_id }}">Remove</a> | <a href="#">Back</a>
+  </div>
+</div>
+
+{% endblock %}

@@ -191,20 +191,37 @@ def create_post(param):
         if 'user_id' in login_session:
             name = request.form['nameItem']
             description = request.form['descriptionItem']
-            price = request.form['priceItem']
             user = login_session['user_id']
             cat = get_category_id(param)
             print cat
 
-            new_item = Item(name=name, description=description, price=price, user_id=user, cat=cat)
+            new_item = Item(name=name, description=description,
+                            user_id=user, cat=cat)
             session.add(new_item)
             session.commit()
 
-            return redirect('/%s' %param)
+            return redirect('/%s' % param)
 
         else:
-            flash("You don't have permission to create a post.")
+            flash("You don't have permission to create an item.")
             return redirect(url_for('listing_category', param=param))
+
+
+@app.route("/resume/<regex('\d+'):param>")
+def resume_item(param):
+    item_id = param
+    item = session.query(Item).filter_by(item_id=item_id).one()
+    return render_template('resume_item.html', item=item)
+
+
+@app.route("/remove/<regex('\d+'):param>")
+def remove_item(param):
+    if 'user_id' in login_session:
+        session.query(Item).filter_by(item_id=param).delete()
+        flash("Item successfully deleted!.")
+    else:
+        flash("You don't have permission to remove an item.")
+        return redirect('/resume/%s' % param)
 
 
 @app.route("/<regex('\D+'):param>", methods=['GET'])
@@ -217,15 +234,11 @@ def listing_category(param):
     else:
         flash("This category doesn't exist!", 'error')
 
-    print 'aquiausiausi: ', len(items_category)
-
     if category_exists and items_category is not None:
         if len(items_category) == 0:
-            flash("There aren't any posts for this category!", 'error')
+            flash("There aren't any items for this category!", 'error')
 
-    print 'antes de', len(items_category)
-
-    return render_template('post_category.html', items=items_category, cat=param)
+    return render_template('items_category.html', items=items_category, cat=param)
 
 
 @app.route('/')
