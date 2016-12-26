@@ -278,6 +278,7 @@ def listing_category(param):
 
     return render_template('items_category.html', items=items_category, cat=param)
 
+
 @app.route("/<regex('\D+'):param>/JSON", methods=['GET'])
 def listing_category_json(param):
     category_exists = session.query(Category).filter_by(category=param).first()
@@ -287,14 +288,6 @@ def listing_category_json(param):
             category_id=category_exists.category_id).all()
 
     return jsonify(Category_Items=[i.serialize for i in items_category])
-    # else:
-    #     flash("This category doesn't exist!", 'error')
-    #
-    # if category_exists and items_category is not None:
-    #     if len(items_category) == 0:
-    #         flash("There aren't any items for this category!", 'error')
-    #
-    # return render_template('items_category.html', items=items_category, cat=param)
 
 
 @app.route('/')
