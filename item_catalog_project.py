@@ -1,4 +1,4 @@
-from flask import Flask, render_template, make_response, request, flash, redirect, url_for
+from flask import Flask, render_template, make_response, request, flash, redirect, url_for, jsonify
 from werkzeug.routing import BaseConverter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -181,7 +181,7 @@ def login():
 def create_post(param):
     if request.method == 'GET':
         if 'user_id' in login_session:
-            return render_template('post_create.html', cat=param)
+            return render_template('item_create.html', cat=param)
         else:
             flash("You don't have permission to create a post.")
             return redirect(url_for('listing_category', param=param))
@@ -217,11 +217,49 @@ def resume_item(param):
 @app.route("/remove/<regex('\d+'):param>")
 def remove_item(param):
     if 'user_id' in login_session:
-        session.query(Item).filter_by(item_id=param).delete()
-        flash("Item successfully deleted!.")
+        item_selected = session.query(Item).filter_by(item_id=param).one()
+        category = session.query(Category).filter_by(
+            category_id=item_selected.category_id).one()
+        if login_session['user_id'] == item_selected.user_id:
+            session.query(Item).filter_by(item_id=param).delete()
+            session.commit()
+            flash("Item successfully deleted!.")
+        else:
+            flash("You don't own this item. You cannot delete it")
+
+        return redirect('/%s' % category.category)
     else:
         flash("You don't have permission to remove an item.")
         return redirect('/resume/%s' % param)
+
+
+@app.route("/edit/<regex('\d+'):param>", methods=['GET', 'POST'])
+def edit_item(param):
+    if 'user_id' in login_session:
+        item_selected = session.query(Item).filter_by(item_id=param).one()
+        if login_session['user_id'] == item_selected.user_id:
+
+            category = session.query(Category).filter_by(
+                category_id=item_selected.category_id).one()
+
+            if request.method == 'POST':
+                new_name = request.form['nameItem']
+                new_description = request.form['descriptionItem']
+                item_selected.name = new_name
+                item_selected.description = new_description
+                session.add(item_selected)
+                session.commit()
+                flash("Item successfully edited!.")
+            else:
+                return render_template('item_create.html',
+                                       old_name=item_selected.name,
+                                       old_description=item_selected.description, id=param)
+        else:
+            flash("You don't own this item. You cannot edit it")
+    else:
+        flash("You don't have permission to edit an item.")
+
+    return redirect('/resume/%s' % param)
 
 
 @app.route("/<regex('\D+'):param>", methods=['GET'])
@@ -239,6 +277,24 @@ def listing_category(param):
             flash("There aren't any items for this category!", 'error')
 
     return render_template('items_category.html', items=items_category, cat=param)
+
+@app.route("/<regex('\D+'):param>/JSON", methods=['GET'])
+def listing_category_json(param):
+    category_exists = session.query(Category).filter_by(category=param).first()
+    items_category = []
+    if category_exists:
+        items_category = session.query(Item).filter_by(
+            category_id=category_exists.category_id).all()
+
+    return jsonify(Category_Items=[i.serialize for i in items_category])
+    # else:
+    #     flash("This category doesn't exist!", 'error')
+    #
+    # if category_exists and items_category is not None:
+    #     if len(items_category) == 0:
+    #         flash("There aren't any items for this category!", 'error')
+    #
+    # return render_template('items_category.html', items=items_category, cat=param)
 
 
 @app.route('/')
