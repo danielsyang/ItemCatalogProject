@@ -1,124 +1,52 @@
-<!DOCTYPE html>
-<html>
+{% extends "header.html" %}
+{% block content %}
 
-<head>
-    <meta charset="utf-8">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <title>Item Catalog</title>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js">
-    </script>
-    <script src="//apis.google.com/js/platform.js?onload=start">
-    </script>
-    <!-- Google sign in -->
-    <script >
-    function signInCallback(authResult) {
-        if (authResult['code']) {
-            $('#signinButton').attr('style', 'display: none');
-        }
-        $.ajax({
-            type: 'POST',
-            url: '/googleconnect?state={{STATE}}',
-            processData: false,
-            contentType: 'application/octet-stream; charset=utf-8',
-            data: authResult['code'],
-            success: function(result) {
-                if (result) {
-                  window.location.href = '/';
-                } else if (authResult['error']) {
-                    console.log('There was an error: ' + authResult['error']);
-                } else {
-                    $('#result').html('Failed to make a server-side call. Check your configuration and console.');
-                }
-            }
-        })
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js">
+</script>
+<script src="//apis.google.com/js/platform.js?onload=start">
+</script>
+<!-- Google sign in -->
+<script >
+function signInCallback(authResult) {
+    if (authResult['code']) {
+        $('#signinButton').attr('style', 'display: none');
     }
-    </script>
-
-    <!-- Google sign in -->
-
-    <!--Facebook sign in -->
-    <script>
-      window.fbAsyncInit = function() {
-      FB.init({
-        appId      : '1745692772418457',
-        cookie     : true,  // enable cookies to allow the server to access
-                            // the session
-        xfbml      : true,  // parse social plugins on this page
-        version    : 'v2.2' // use version 2.2
-      });
-      };
-      // Load the SDK asynchronously
-      (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = "//connect.facebook.net/en_US/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-      }(document, 'script', 'facebook-jssdk'));
-      // Here we run a very simple test of the Graph API after login is
-      // successful.  See statusChangeCallback() for when this call is made.
-      function sendTokenToServer() {
-        var access_token = FB.getAuthResponse()['accessToken'];
-        console.log(access_token)
-        console.log('Welcome!  Fetching your information.... ');
-        FB.api('/me', function(response) {
-          console.log('Successful login for: ' + response.name);
-         $.ajax({
-          type: 'POST',
-          url: '/fbconnect?state={{STATE}}',
-          processData: false,
-          data: access_token,
-          contentType: 'application/octet-stream; charset=utf-8',
-          success: function(result) {
-            // Handle or verify the server response if necessary.
+    $.ajax({
+        type: 'POST',
+        url: '/googleconnect?state={{STATE}}',
+        processData: false,
+        contentType: 'application/octet-stream; charset=utf-8',
+        data: authResult['code'],
+        success: function(result) {
             if (result) {
-              $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
-             setTimeout(function() {
-              window.location.href = "/restaurant";
-             }, 4000);
+              window.location.href = '/';
+            } else if (authResult['error']) {
+                console.log('There was an error: ' + authResult['error']);
+            } else {
+                $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+            }
+        }
+    })
+}
+</script>
 
-          } else {
-            $('#result').html('Failed to make a server-side call. Check your configuration and console.');
-             }
-          }
+<!-- Google sign in -->
 
-      });
-        });
-      }
-    </script>
-    <!-- Facebook sign in -->
-
-</head>
-
-<body>
-    <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <h3 class="text-center">
-              Please select one below
-            </h3>
-          </div>
-            <div class="col-md-12">
-                <div id="signInButton" class="text-center">
-                    <span class="g-signin" data-scope="openid email"
-                          data-clientid="324388598201-gf1cblm4n8m1cf27acg5q1lgrqs0l1dp.apps.googleusercontent.com"
-                          data-redirecturi="postmessage"
-                          data-accesstype="offline"
-                          data-cookiepolicy="single_host_origin"
-                          data-callback="signInCallback" data-approvalprompt="force">
-                    </span>
-                </div>
-                <div id="result"></div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div id="signInButton" class="text-center">
+                <span class="g-signin" data-scope="openid email"
+                      data-clientid="324388598201-gf1cblm4n8m1cf27acg5q1lgrqs0l1dp.apps.googleusercontent.com"
+                      data-redirecturi="postmessage"
+                      data-accesstype="offline"
+                      data-cookiepolicy="single_host_origin"
+                      data-callback="signInCallback" data-approvalprompt="force">
+                </span>
             </div>
-            <div class="col-md-12 text-center">
-              <button>
-                <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
-                  <a href='javascript:sendTokenToServer()'>Login with Facebook</a>
-                </fb:login-button>
-              </button>
-            </div>
+            <div id="result"></div>
         </div>
     </div>
-</body>
+</div>
 
-</html>
+{% endblock %}

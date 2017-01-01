@@ -13,9 +13,15 @@
           <span class="navbar-brand">Item Catalog Project</span>
         </div>
         <ul class="nav navbar-nav">
-          <li><a href="/">Categories</a></li>          
+          <li><a href="/">Categories</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          {% if 'username' not in session  %}
           <li><a href="/login">Login</a></li>
+          {% else %}
+          <li class="navbar-right"><a>Hello, {{ session['username'] }}</a></li>
           <li><a href="/disconnect">Logout</a></li>
+          {% endif %}
         </ul>
       </div>
     </nav>
