@@ -176,6 +176,17 @@ def login():
 
 @app.route("/create/<regex('\D+'):param>", methods=['POST', 'GET'])
 def create_post(param):
+    """
+    Method name: create_post
+    Description:
+        This method is responsible to create an item or give the user the page that contains the form to create them.
+    Args:
+        param (data type: str): It is the category user wants to create an item.
+    Returns:
+        If request.method == get it should return template to create an item
+        else it should save the recently created item in database and then return to category's page
+        in both case the user must be logged in.
+    """
     if request.method == 'GET':
         if 'user_id' in login_session:
             return render_template('item_create.html', cat=param)
@@ -206,13 +217,54 @@ def create_post(param):
 
 @app.route("/resume/<regex('\d+'):param>")
 def resume_item(param):
+    """
+    Method name: resume_item
+    Description:
+        This method is responsible to show an item if it exists, else it will show an error message.
+    Args:
+        param (data type: int): It is the id of the item user wants to retrieve.
+    Returns:
+        return the item if it was found on the database,
+        else just return an error message
+    """
     item_id = param
-    item = session.query(Item).filter_by(item_id=item_id).one()
-    return render_template('resume_item.html', item=item)
+    try:
+        item = session.query(Item).filter_by(item_id=item_id).one()
+        return render_template('resume_item.html', item=item)
+    except:
+        flash("Item doesn't exist")
+        return redirect('/')
+
+
+@app.route("/resume/<regex('\d+'):param>/JSON", methods=['GET'])
+def resume_item_json(param):
+    """
+    Method name: resume_item_json
+    Description:
+        Same as method resume_item but instead it will return the found item in json format
+    """
+    item = session.query(Item).filter_by(item_id=param).first()
+    if item is not None:
+        return jsonify(item_id=item.item_id, name=item.name,
+                       description=item.description, user_id=item.user_id,
+                       category_id=item.category_id)
+    else:
+        return jsonify(Item=[])
 
 
 @app.route("/remove/<regex('\d+'):param>")
 def remove_item(param):
+    """
+    Method name: remove_item
+    Description:
+        This method is responsible to remove an item if it exists, else it will show an error message.
+    Args:
+        param (data type: int): It is the id of the item user wants to retrieve.
+    Returns:
+        delete item in database if it exists.
+        it should first check if user is logged in, if positive then should check if the user logged is the same user that created the item,
+        and then finally delete the item
+    """
     if 'user_id' in login_session:
         item_selected = session.query(Item).filter_by(item_id=param).one()
         category = session.query(Category).filter_by(
@@ -232,6 +284,17 @@ def remove_item(param):
 
 @app.route("/edit/<regex('\d+'):param>", methods=['GET', 'POST'])
 def edit_item(param):
+    """
+    Method name: edit_item
+    Description:
+        This method is responsible to edit an item if it exists, else it will show an error message.
+    Args:
+        param (data type: int): It is the id of the item user wants to retrieve.
+    Returns:
+        edit item in database if it exists.
+        it should first check if user is logged in, if positive then should check if the user logged is the same user that created the item,
+        and then finally edit the item
+    """
     if 'user_id' in login_session:
         item_selected = session.query(Item).filter_by(item_id=param).one()
         if login_session['user_id'] == item_selected.user_id:
@@ -261,6 +324,16 @@ def edit_item(param):
 
 @app.route("/<regex('\D+'):param>", methods=['GET'])
 def listing_category(param):
+    """
+    Method name: listing_category
+    Description:
+        This method is responsible to list all item in categories in database.
+    Args:
+        param (data type: str): category name user wants to retrieve.
+    Returns:
+        first we need to check if category exists, if true, then list all item inside that category.
+        finally it should return a list with all item, else just return an error message
+    """
     category_exists = session.query(Category).filter_by(category=param).first()
     items_category = []
     if category_exists:
@@ -274,17 +347,6 @@ def listing_category(param):
             flash("There aren't any items for this category!", 'error')
 
     return render_template('items_category.html', items=items_category, cat=param)
-
-
-@app.route("/<regex('\D+'):param>/JSON", methods=['GET'])
-def listing_category_json(param):
-    category_exists = session.query(Category).filter_by(category=param).first()
-    items_category = []
-    if category_exists:
-        items_category = session.query(Item).filter_by(
-            category_id=category_exists.category_id).all()
-
-    return jsonify(Category_Items=[i.serialize for i in items_category])
 
 
 @app.route('/')
@@ -320,5 +382,5 @@ def create_user(login_session):
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
-    app.debug = True
+    app.debug = False
     app.run(host='0.0.0.0', port=5000)
